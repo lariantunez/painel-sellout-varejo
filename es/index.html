@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <script src="../assets/idioma-estudo.js"></script>
+  <link rel="alternate" hreflang="pt-BR" href="https://lariantunez.github.io/painel-sellout-varejo/">
+  <link rel="alternate" hreflang="en" href="https://lariantunez.github.io/painel-sellout-varejo/en/">
+  <link rel="alternate" hreflang="es" href="https://lariantunez.github.io/painel-sellout-varejo/es/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Vitta · Estudio de caso</title>
+  <meta name="description" content="Estudio de caso: un panel de sell out e inventario que reemplazó las tablas dinámicas. Importación controlada, MongoDB, caché y rendimiento. Demostración con datos ficticios.">
+  <meta property="og:title" content="Panel Vitta · de las tablas dinámicas de Excel al panel de sell out">
+  <meta property="og:description" content="Importación controlada, MongoDB Atlas, campos precalculados y caché: un panel de sell out e inventario en producción.">
+  <meta property="og:image" content="../assets/painel-vendas.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/estudo.css">
+  <style>
+    /* Identidade do Painel Vitta: verde-limão sobre azul-marinho. */
+    :root { --accent: #c8f135; --accent-2: #c8f135; --on-accent: #0d0f14; --accent-wash: rgba(200, 241, 53, 0.1); --green: #4fffb0; --green-wash: rgba(79, 255, 176, 0.1); }
+    :root[data-theme="light"] { --accent: #5f8f00; --accent-2: #5f8f00; --on-accent: #fff; --accent-wash: rgba(95, 143, 0, 0.09); --green: #007a5a; --green-wash: rgba(0, 122, 90, 0.09); }
+    @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --accent: #5f8f00; --accent-2: #5f8f00; --on-accent: #fff; --accent-wash: rgba(95, 143, 0, 0.09); --green: #007a5a; --green-wash: rgba(0, 122, 90, 0.09); } }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <div class="wrap">
+      <a class="marca" href="#inicio"><i></i>Panel Vitta</a>
+      <nav>
+        <a class="opcional" href="https://lariantunez.github.io/Vitrine-de-projetos/?lang=es">Portafolio</a>
+        <a class="opcional" href="#c00">Estudio de caso</a>
+        <a class="opcional" href="https://github.com/lariantunez/painel-sellout-varejo">Código</a>
+        <a href="../painel/">Abrir panel</a>
+        <div class="idiomas" role="group" aria-label="Idioma"><a href="../?lang=pt" data-idioma="pt" hreflang="pt-BR">PT</a><a href="../en/" data-idioma="en" hreflang="en">EN</a><a href="./" data-idioma="es" hreflang="es" aria-current="true">ES</a></div>
+        <button class="btn-tema" id="tema" type="button" aria-label="Cambiar tema">☀</button>
+      </nav>
+      <span class="progresso"></span>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="abertura">
+      <div class="wrap">
+        <span class="selo-topo"><b>●</b> Proyecto en producción · demostración con datos ficticios</span>
+        <h1>De las tablas dinámicas de Excel al panel de <em>sell out</em>.</h1>
+        <p class="lead">Un panel web que reemplazó las tablas dinámicas que usaba la dirección comercial para seguir las ventas, el valor vendido y el inventario de una cadena minorista cliente, tienda por tienda y producto por producto. Importación controlada, tratamiento automático al ingresar los datos e indicadores que responden a cualquier filtro.</p>
+        <div class="acoes">
+          <a class="btn primario" href="../painel/">Explorar el panel →</a>
+          <a class="btn" href="#c00">Leer el estudio de caso</a>
+        </div>
+        <div class="numeros">
+          <div><strong>3</strong><span>bases de entrada (ventas y dos tablas de equivalencias)</span></div>
+          <div><strong>7</strong><span>pestañas, de ventas a gestión de accesos</span></div>
+          <div><strong>49</strong><span>rutas de API en el backend</span></div>
+          <div><strong>215</strong><span>versiones publicadas en 4 meses</span></div>
+          <div><strong>2</strong><span>paneles derivados: Atlas y Bella</span></div>
+        </div>
+        <figure class="vitrine">
+          <div class="barra-janela"><i></i><i></i><i></i><span>painel/ · Ventas Sell Out (datos ficticios)</span></div>
+          <img src="../assets/painel-vendas.jpg" alt="Pestaña Ventas Sell Out: filtros por año, mes, período, tienda, categoría, familia y producto; tarjetas de total vendido, tiendas con ventas y sucursal principal; gráfico de cantidad por mes" width="1440" height="900">
+        </figure>
+      </div>
+    </section>
+
+    <div class="wrap livro">
+      <aside class="indice" aria-label="Capítulos">
+        <p>Capítulos</p>
+        <ol>
+          <li><a href="#c00"><b>00</b>El desafío</a></li>
+          <li><a href="#c01"><b>01</b>Principios</a></li>
+          <li><a href="#c02"><b>02</b>Las bases</a></li>
+          <li><a href="#c03"><b>03</b>Flujo de datos</a></li>
+          <li><a href="#c04"><b>04</b>Modelo en MongoDB</a></li>
+          <li><a href="#c05"><b>05</b>Backend e importación</a></li>
+          <li><a href="#c06"><b>06</b>Rendimiento</a></li>
+          <li><a href="#c07"><b>07</b>Front-end</a></li>
+          <li><a href="#c08"><b>08</b>Línea de tiempo</a></li>
+          <li><a href="#c09"><b>09</b>Producción y demo</a></li>
+        </ol>
+      </aside>
+
+      <div class="capitulos">
+        <!-- 00 -->
+        <section class="capitulo" id="c00">
+          <span class="rotulo-cap">00 · El desafío</span>
+          <h2>Cada mes, la misma planilla, rehecha desde cero.</h2>
+          <p>La cadena minorista envía la extracción de su sistema con la venta y el inventario de cada tienda y producto. Para responder a las preguntas de la dirección comercial, el análisis se armaba en <strong>tablas dinámicas de Excel</strong>: archivos pesados, una versión por persona y el mismo trabajo manual en cada cierre.</p>
+          <p class="destaque revelar">¿Cuánto vendimos, en qué tienda, de qué categoría, y el inventario acompaña la venta? Todo eso sin abrir una planilla.</p>
+          <div class="grade g3 revelar">
+            <div class="cartao azul"><span class="num">VENTA</span><h4>Cantidad y valor</h4><p>Unidades vendidas y valor vendido por mes, día, tienda, categoría, familia y producto.</p></div>
+            <div class="cartao verde"><span class="num">INVENTARIO</span><h4>Posición y evolución</h4><p>Inventario del último día de cada mes, mayores y menores inventarios e histórico diario por tienda.</p></div>
+            <div class="cartao ambar"><span class="num">RUTINA</span><h4>Sin retrabajo</h4><p>Importar el archivo del mes y listo: el panel trata, clasifica y se actualiza solo.</p></div>
+          </div>
+        </section>
+
+        <!-- 01 -->
+        <section class="capitulo" id="c01">
+          <span class="rotulo-cap">01 · Principios</span>
+          <h2>El frontend muestra. El backend procesa. Mongo guarda.</h2>
+          <p>La arquitectura cabe en una frase, y cuatro reglas guiaron todas las decisiones:</p>
+          <div class="grade g2 revelar">
+            <div class="cartao"><span class="num">01</span><h4>La importación es la parte más importante</h4><p>Todo dato entra listo para consultar: números convertidos, fechas estandarizadas, categoría y familia ya grabadas. El panel nunca tiene que deducir nada al momento de mostrar.</p></div>
+            <div class="cartao"><span class="num">02</span><h4>Toda importación se puede deshacer</h4><p>Cada fila lleva el identificador del lote. Deshacer borra exactamente ese lote, lo registra en el historial y limpia la caché.</p></div>
+            <div class="cartao"><span class="num">03</span><h4>Ningún número desactualizado en pantalla</h4><p>Importar, deshacer o limpiar invalida la caché. Tener Mongo correcto con el panel desactualizado es un error tan grave como tener el dato equivocado.</p></div>
+            <div class="cartao"><span class="num">04</span><h4>Acceso por roles</h4><p>El usuario principal no se puede eliminar ni cambiar su contraseña desde el panel. Los administradores gestionan los usuarios, y las limpiezas críticas piden la contraseña principal.</p></div>
+          </div>
+        </section>
+
+        <!-- 02 -->
+        <section class="capitulo" id="c02">
+          <span class="rotulo-cap">02 · Las bases</span>
+          <h2>Tres archivos, tres comportamientos.</h2>
+          <p>Cada base tiene una regla de entrada distinta, y esa diferencia tiene que ser explícita para quien importa. La pantalla de importación explica cada una y ofrece una plantilla para descargar.</p>
+          <div class="tabela-rolagem revelar">
+            <table class="tabela">
+              <thead><tr><th>Base</th><th>Formato</th><th>Columnas</th><th>Al importar</th><th>Trampa encontrada</th></tr></thead>
+              <tbody>
+                <tr><td>Datos brutos</td><td>CSV, XLS o XLSX</td><td><code>Data</code> <code>Loja</code> <code>GTIN/PLU</code> <code>Produto</code> <code>Venda (Qtd)</code> <code>Venda (R$)</code> <code>Estoque Diario</code></td><td><span class="ok">Complementa</span> el historial (o reemplaza el período)</td><td>Valores monetarios en formatos variados, meses escritos con letras y GTIN que perdía los ceros a la izquierda en XLSX</td></tr>
+                <tr><td>Equivalencias de categorías</td><td>XLSX</td><td><code>CODBARRAS</code> <code>CATEGORIA</code> <code>FAMILIA</code> <code>NOME PRODUTO</code></td><td><span class="alerta">Reemplaza</span> toda la tabla de equivalencias</td><td>Un producto vendido sin equivalencia tenía que aparecer como pendiente, no desaparecer</td></tr>
+                <tr><td>Equivalencias de tiendas</td><td>CSV</td><td><code>Cod_Loja</code> <code>Nome_Fantasia</code></td><td><span class="alerta">Reemplaza</span> toda la tabla de equivalencias</td><td>Importar un archivo parcial borraba las demás tiendas: la pantalla lo advierte de forma destacada</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 03 -->
+        <section class="capitulo" id="c03">
+          <span class="rotulo-cap">03 · Flujo de datos</span>
+          <h2>Del archivo a la pestaña, sin cálculos al mostrar.</h2>
+          <div class="fluxo revelar" role="img" aria-label="Flujo: archivo, importación por lotes, preparación de los campos, MongoDB, agregaciones con caché y pestañas del panel">
+            <div class="coluna"><b>1 · Archivo</b>
+              <div class="item erp">Datos brutos<small>CSV · XLS · XLSX</small></div>
+              <div class="item bi">Equivalencias de categorías<small>XLSX</small></div>
+              <div class="item bi">Equivalencias de tiendas<small>CSV</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>2 · Importación</b>
+              <div class="item">Envío por lotes<small>barra de progreso</small></div>
+              <div class="item">Normalización<small>números, fechas, GTIN</small></div>
+              <div class="item">Clasificación<small>categoría y familia según la equivalencia</small></div>
+              <div class="item">Log del lote<small>quién, cuándo, cuántas filas</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>3 · MongoDB</b>
+              <div class="item fato">dados_brutos<small>con campos preparados</small></div>
+              <div class="item dim">equivalencias<small>categorías y tiendas</small></div>
+              <div class="item">índices<small>fecha, GTIN, tienda, categoría</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>4 · Panel</b>
+              <div class="item">Agregaciones<small>en el servidor de la base de datos</small></div>
+              <div class="item">Caché en memoria<small>precalentada</small></div>
+              <div class="item">5 pestañas analíticas<small>+ importación y gestión</small></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04 -->
+        <section class="capitulo" id="c04">
+          <span class="rotulo-cap">04 · Modelo en MongoDB</span>
+          <h2>Una colección central, preparada para responder rápido.</h2>
+          <p>Los datos de venta e inventario están en una colección central, <code>dados_brutos</code>. Cada fila del archivo se convierte en un documento, y la importación agrega <strong>campos preparados</strong> (empiezan con <code>_</code>), que las consultas usan en lugar de los campos originales.</p>
+          <figure class="diagrama revelar">
+            <svg viewBox="0 0 960 430" role="img" aria-label="Colecciones: dados_brutos al centro, conectada a las equivalencias de categorías y tiendas y al log de importaciones; colecciones de acceso abajo">
+              <path class="liga forte" d="M365 120 C 300 120, 310 69, 260 69"/><path class="liga forte" d="M365 160 C 300 160, 310 179, 260 179"/>
+              <path class="liga forte" d="M595 140 C 650 140, 650 69, 700 69"/><path class="liga" d="M815 98 V 150"/>
+              <path class="liga" d="M260 320 H 365"/><path class="liga" d="M595 320 H 700"/>
+              <g class="no dim"><rect x="30" y="40" width="230" height="58" rx="10"/><text x="145" y="64" text-anchor="middle">categorias_depara</text><text class="sub" x="145" y="84" text-anchor="middle">GTIN → categoría, familia, nombre</text></g>
+              <g class="no dim"><rect x="30" y="150" width="230" height="58" rx="10"/><text x="145" y="174" text-anchor="middle">lojas_depara</text><text class="sub" x="145" y="194" text-anchor="middle">código → nombre de la tienda</text></g>
+              <g class="no fato"><rect x="365" y="90" width="230" height="100" rx="10"/><text x="480" y="122" text-anchor="middle">dados_brutos</text><text class="sub" x="480" y="144" text-anchor="middle">venta e inventario por día × tienda × GTIN</text><text class="sub" x="480" y="164" text-anchor="middle">+ _qtd_num _valor_num _data_iso</text><text class="sub" x="480" y="180" text-anchor="middle">_gtin _cat _fam _import_id</text></g>
+              <g class="no apoio"><rect x="700" y="40" width="230" height="58" rx="10"/><text x="815" y="64" text-anchor="middle">logs_importacao</text><text class="sub" x="815" y="84" text-anchor="middle">lote, archivo, usuario, total</text></g>
+              <g class="no apoio"><rect x="700" y="150" width="230" height="58" rx="10"/><text x="815" y="174" text-anchor="middle">templates_importacao</text><text class="sub" x="815" y="194" text-anchor="middle">plantillas para descargar</text></g>
+              <g class="no"><rect x="30" y="291" width="230" height="58" rx="10"/><text x="145" y="315" text-anchor="middle">usuarios_admin</text><text class="sub" x="145" y="335" text-anchor="middle">incluye al usuario principal</text></g>
+              <g class="no"><rect x="365" y="291" width="230" height="58" rx="10"/><text x="480" y="315" text-anchor="middle">usuarios_importacao</text><text class="sub" x="480" y="335" text-anchor="middle">quién puede importar</text></g>
+              <g class="no"><rect x="700" y="291" width="230" height="58" rx="10"/><text x="815" y="315" text-anchor="middle">tokens_reset</text><text class="sub" x="815" y="335" text-anchor="middle">restablecimiento por correo, expira</text></g>
+            </svg>
+            <figcaption>Rojo: datos de venta e inventario. Verde: equivalencias. Punteado: control de la importación. Abajo: acceso.</figcaption>
+          </figure>
+          <div class="tabela-rolagem revelar">
+            <table class="tabela">
+              <thead><tr><th>Campo preparado</th><th>Qué guarda</th><th>Por qué existe</th></tr></thead>
+              <tbody>
+                <tr><td><code>_qtd_num</code> · <code>_valor_num</code></td><td>Cantidad y valor convertidos a número</td><td>Sumar sin tratar texto en cada consulta</td></tr>
+                <tr><td><code>_data_iso</code></td><td>Fecha en formato AAAA-MM-DD</td><td>Filtrar por período con índice</td></tr>
+                <tr><td><code>_gtin</code></td><td>Código de producto estandarizado</td><td>Cruzar con la tabla de equivalencias sin diferencias de ceros</td></tr>
+                <tr><td><code>_cat</code> · <code>_fam</code></td><td>Categoría y familia grabadas al ingresar</td><td>Evitar buscar en la tabla de equivalencias en cada clic</td></tr>
+                <tr><td><code>_import_id</code></td><td>Lote de origen de la fila</td><td>Deshacer exactamente una importación</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 05 -->
+        <section class="capitulo" id="c05">
+          <span class="rotulo-cap">05 · Backend e importación</span>
+          <h2>Cinco pasos entre el archivo y el panel actualizado.</h2>
+          <p>El backend es Node.js con Express: 49 rutas para el panel, la importación, la gestión de usuarios y el historial. La importación de datos brutos sigue siempre la misma secuencia:</p>
+          <div class="etapas revelar">
+            <div class="etapa"><div><h4>El navegador lee el archivo y lo envía por lotes</h4><p>los archivos grandes no superan el tiempo límite de la solicitud</p></div></div>
+            <div class="etapa"><div><h4>El servidor lee y normaliza cada fila</h4><p>valores, meses escritos con letras, fechas y GTIN</p></div></div>
+            <div class="etapa"><div><h4>Clasifica según la tabla de equivalencias en memoria</h4><p>el mapa GTIN → categoría y familia se carga una vez por importación</p></div></div>
+            <div class="etapa"><div><h4>Graba en Mongo con los campos preparados</h4><p>cada fila marcada con su lote</p></div></div>
+            <div class="etapa"><div><h4>Registra el lote y limpia la caché</h4><p>y precalienta las consultas principales antes del primer clic</p></div></div>
+          </div>
+          <div class="grade g2 revelar">
+            <div class="cartao"><h4>Complementar o reemplazar</h4><p>Por defecto, la importación se suma al historial. En el modo reemplazar, los meses del archivo sustituyen los datos del mismo período, para reenviar un mes corregido.</p></div>
+            <div class="cartao"><h4>Deshacer con seguridad</h4><p>Deshacer borra las filas del lote (o toda la tabla de equivalencias), elimina el log y limpia la caché. Limpiar todo el historial exige la contraseña del usuario principal.</p></div>
+          </div>
+        </section>
+
+        <!-- 06 -->
+        <section class="capitulo" id="c06">
+          <span class="rotulo-cap">06 · Rendimiento</span>
+          <h2>El secreto está en la entrada, no en la pantalla.</h2>
+          <p>Con el historial creciendo cada mes, el panel empezó a volverse lento y algunas consultas amplias llegaron al límite de tiempo del servidor. Cada cuello de botella se convirtió en un cambio de arquitectura:</p>
+          <div class="revelar">
+            <div class="mudanca"><div class="antes"><b>Antes</b>Categoría y familia se buscaban en la tabla de equivalencias en cada consulta.</div><div class="seta">→</div><div class="depois"><b>Después</b>Grabadas en la importación (<code>_cat</code>, <code>_fam</code>). La consulta solo agrupa.</div></div>
+            <div class="mudanca"><div class="antes"><b>Antes</b>Cambiar la tabla de equivalencias obligaba a reprocesar todo en el servidor de la aplicación.</div><div class="seta">→</div><div class="depois"><b>Después</b>Reclasificación con <code>$lookup</code> + <code>$merge</code> dentro del propio MongoDB, con barra de progreso.</div></div>
+            <div class="mudanca"><div class="antes"><b>Antes</b>Cada pestaña recalculaba al abrirse, y la primera visita era lenta.</div><div class="seta">→</div><div class="depois"><b>Después</b>Caché en memoria en las rutas del panel y precalentamiento de las consultas principales después de cada importación.</div></div>
+            <div class="mudanca"><div class="antes"><b>Antes</b>La consulta de todo el historial superaba el tiempo límite (error 504).</div><div class="seta">→</div><div class="depois"><b>Después</b>Las pestañas pesadas abren en el año actual, cargan bajo demanda, y la agregación amplia se reescribió para no superar el límite.</div></div>
+            <div class="mudanca"><div class="antes"><b>Antes</b>Las verificaciones y migraciones en la base de datos retenían el servidor al iniciar.</div><div class="seta">→</div><div class="depois"><b>Después</b>El arranque no espera a la base de datos: las tareas pesadas salieron del inicio y el panel responde apenas termina el deploy.</div></div>
+          </div>
+          <p class="destaque revelar">Si el panel tiene que deducir la categoría, la fecha o el valor mientras muestra los datos, se vuelve lento. El trabajo pesado ocurre una sola vez, en la entrada.</p>
+        </section>
+
+        <!-- 07 -->
+        <section class="capitulo" id="c07">
+          <span class="rotulo-cap">07 · Front-end</span>
+          <h2>Siete pestañas, los mismos filtros en todas.</h2>
+          <p>La interfaz es HTML, CSS y JavaScript puro, sin framework. Los filtros (año, mes, período, tienda, categoría, familia y producto, con selección múltiple) están estandarizados entre las pestañas, y cada pestaña exporta a Excel y PDF.</p>
+          <div class="grade g3 revelar">
+            <div class="cartao azul"><h4>Ventas Sell Out</h4><p>Unidades por mes, tienda, categoría y familia, con la sucursal principal destacada.</p></div>
+            <div class="cartao azul"><h4>Venta en Valor</h4><p>La misma mirada en reales, por mes y por tienda.</p></div>
+            <div class="cartao azul"><h4>Venta por Día</h4><p>Curva diaria, promedio por día y mejor día del período.</p></div>
+            <div class="cartao verde"><h4>Inventario</h4><p>Inventario del último día de cada mes, mayores y menores inventarios e histórico diario.</p></div>
+            <div class="cartao verde"><h4>Sell Out × Inventario</h4><p>Venta del mes junto al inventario de cierre, por sucursal.</p></div>
+            <div class="cartao ambar"><h4>Importar y Gestionar</h4><p>Importación con plantillas e historial; gestión de usuarios, administradores y plantillas.</p></div>
+          </div>
+          <div class="galeria revelar">
+            <figure><img src="../assets/painel-valor.jpg" alt="Pestaña Venta en Valor con el total general en reales y un gráfico por mes" loading="lazy" width="1440" height="900"><figcaption>Venta en Valor: total del período y evolución mensual.</figcaption></figure>
+            <figure><img src="../assets/painel-dia.jpg" alt="Pestaña Venta por Día con promedio diario, mejor día y curva diaria" loading="lazy" width="1440" height="900"><figcaption>Venta por Día: promedio diario y mejor día.</figcaption></figure>
+            <figure><img src="../assets/painel-se.jpg" alt="Pestaña Sell Out x Inventario con barras de venta e inventario por mes" loading="lazy" width="1440" height="900"><figcaption>Sell Out × Inventario: venta e inventario de cierre lado a lado.</figcaption></figure>
+            <figure><img src="../assets/painel-importar.jpg" alt="Pestaña Importar con los tres tipos de archivo, plantillas e instrucciones" loading="lazy" width="1440" height="900"><figcaption>Importar: cada base con su plantilla y su regla explicada.</figcaption></figure>
+          </div>
+        </section>
+
+        <!-- 08 -->
+        <section class="capitulo" id="c08">
+          <span class="rotulo-cap">08 · Línea de tiempo</span>
+          <h2>215 versiones en cuatro meses.</h2>
+          <p>El panel evolucionó en producción, con entregas pequeñas y frecuentes. Los hitos, tomados del historial del repositorio:</p>
+          <ol class="linha-tempo revelar">
+            <li><time>29 abr</time><b>Estructura inicial</b><span>Proyecto con MongoDB y el primer panel con tablas de equivalencias.</span></li>
+            <li><time>06 may</time><b>Primer deploy</b><span>Docker, publicación en Koyeb, control e historial de importaciones, rutas optimizadas.</span></li>
+            <li><time>15 may</time><b>Clasificación en la base de datos</b><span>Filtros alimentados directamente desde Mongo y reclasificación de la tabla de equivalencias con <code>$lookup</code> + <code>$merge</code>, con barra de progreso.</span></li>
+            <li><time>18–19 may</time><b>Inventario y seguridad</b><span>Historial diario de inventario, limpieza protegida con contraseña, plantillas en XLSX y el modo reemplazar.</span></li>
+            <li><time>26–29 may</time><b>Consistencia</b><span>Caché invalidada al deshacer, filtros estandarizados entre pestañas y selección múltiple.</span></li>
+            <li><time>16 jul</time><b>Filtro por producto</b><span>Un nuevo nivel de detalle en todas las pestañas.</span></li>
+            <li><time>22–31 jul</time><b>Escala</b><span>Importación de XLS y XLSX por lotes, arranque sin bloqueo, fin del timeout en la agregación amplia y GTIN preservado.</span></li>
+            <li><time>21 ago</time><b>Demostración pública</b><span>Versión estática con API simulada en el navegador, para el portafolio.</span></li>
+          </ol>
+          <p>La misma base técnica dio origen a otros dos paneles, con las particularidades de cada cliente: el <a href="https://lariantunez.github.io/painel-sellout-de-para/">Panel Atlas</a> (equivalencia intermedia de GTIN) y el <a href="https://lariantunez.github.io/painel-contagem-estoque/">Panel Bella</a> (conteo manual de inventario).</p>
+        </section>
+
+        <!-- 09 -->
+        <section class="capitulo" id="c09">
+          <span class="rotulo-cap">09 · Producción y demostración</span>
+          <h2>En producción en Koyeb; aquí, en el navegador.</h2>
+          <div class="arquitetura revelar">
+            <div class="caixa"><span class="tag">Navegador</span><b>Front-end</b><ul><li>HTML, CSS y JS puro</li><li>exporta a Excel y PDF</li></ul></div>
+            <div class="seta">⇄</div>
+            <div class="caixa"><span class="tag">Koyeb · Docker</span><b>Node.js + Express</b><ul><li>49 rutas, caché en memoria</li><li>login, roles y restablecimiento por correo</li><li>modo solo lectura</li></ul></div>
+            <div class="seta">⇄</div>
+            <div class="caixa"><span class="tag">MongoDB Atlas</span><b>Datos</b><ul><li>datos brutos preparados</li><li>equivalencias, logs y usuarios</li></ul></div>
+          </div>
+          <p>En esta demostración no hay servidor ni base de datos. Un módulo (<code>mock-api.js</code>) intercepta las llamadas del panel en el navegador y responde con datos ficticios, de tiendas, productos y números inventados. El <strong>front-end es el mismo de producción</strong>: filtros, pestañas, gráficos y exportaciones funcionan de verdad. El área de importación y gestión se abre en modo de demostración.</p>
+          <h3>Tecnologías</h3>
+          <div class="pilulas">
+            <span>Node.js</span><span>Express</span><span>MongoDB Atlas</span><span>Agregaciones ($lookup, $merge)</span><span>JavaScript sin framework</span><span>Multer</span><span>XLSX · csv-parser</span><span>Nodemailer</span><span>Docker</span><span>Koyeb</span>
+          </div>
+          <div class="encerramento revelar">
+            <span class="rotulo-cap">Pruébalo</span>
+            <h2>Elige una tienda y compara la venta con el inventario.</h2>
+            <p class="texto">Un recorrido sugerido: en "Vendas Sell Out" (Ventas Sell Out), filtra una tienda y una categoría y mira cómo cambian los números y el gráfico. Después abre "Sell Out × Estoque" (Sell Out × Inventario) y aplica la misma tienda: la venta del mes aparece junto al inventario de cierre. Cada pestaña tiene sus propios filtros, para comparar distintos recortes lado a lado.</p>
+            <div class="acoes"><a class="btn primario" href="../painel/">Abrir el panel →</a><a class="btn" href="https://github.com/lariantunez/painel-sellout-varejo">Ver el código</a></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span><strong>Larissa Antunez</strong> · Analytics &amp; Desarrollo</span>
+      <span>Proyecto en producción · demostración con datos ficticios</span>
+    </div>
+  </footer>
+  <script src="../assets/estudo.js"></script>
+</body>
+</html>

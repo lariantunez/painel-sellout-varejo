@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="../assets/idioma-estudo.js"></script>
+  <link rel="alternate" hreflang="pt-BR" href="https://lariantunez.github.io/painel-sellout-varejo/">
+  <link rel="alternate" hreflang="en" href="https://lariantunez.github.io/painel-sellout-varejo/en/">
+  <link rel="alternate" hreflang="es" href="https://lariantunez.github.io/painel-sellout-varejo/es/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vitta Dashboard · Case study</title>
+  <meta name="description" content="Case study: a sell-out and inventory dashboard that replaced pivot-table spreadsheets. Controlled imports, MongoDB, caching and performance. Demo with fictional data.">
+  <meta property="og:title" content="Vitta Dashboard · from Excel pivot tables to a sell-out dashboard">
+  <meta property="og:description" content="Controlled imports, MongoDB Atlas, precomputed fields and caching: a sell-out and inventory dashboard in production.">
+  <meta property="og:image" content="../assets/painel-vendas.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/estudo.css">
+  <style>
+    /* Identidade do Painel Vitta: verde-limão sobre azul-marinho. */
+    :root { --accent: #c8f135; --accent-2: #c8f135; --on-accent: #0d0f14; --accent-wash: rgba(200, 241, 53, 0.1); --green: #4fffb0; --green-wash: rgba(79, 255, 176, 0.1); }
+    :root[data-theme="light"] { --accent: #5f8f00; --accent-2: #5f8f00; --on-accent: #fff; --accent-wash: rgba(95, 143, 0, 0.09); --green: #007a5a; --green-wash: rgba(0, 122, 90, 0.09); }
+    @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --accent: #5f8f00; --accent-2: #5f8f00; --on-accent: #fff; --accent-wash: rgba(95, 143, 0, 0.09); --green: #007a5a; --green-wash: rgba(0, 122, 90, 0.09); } }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <div class="wrap">
+      <a class="marca" href="#inicio"><i></i>Vitta Dashboard</a>
+      <nav>
+        <a class="opcional" href="https://lariantunez.github.io/Vitrine-de-projetos/?lang=en">Portfolio</a>
+        <a class="opcional" href="#c00">Case study</a>
+        <a class="opcional" href="https://github.com/lariantunez/painel-sellout-varejo">Code</a>
+        <a href="../painel/">Open dashboard</a>
+        <div class="idiomas" role="group" aria-label="Language"><a href="../?lang=pt" data-idioma="pt" hreflang="pt-BR">PT</a><a href="./" data-idioma="en" hreflang="en" aria-current="true">EN</a><a href="../es/" data-idioma="es" hreflang="es">ES</a></div>
+        <button class="btn-tema" id="tema" type="button" aria-label="Toggle theme">☀</button>
+      </nav>
+      <span class="progresso"></span>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="abertura">
+      <div class="wrap">
+        <span class="selo-topo"><b>●</b> Project in production · demo with fictional data</span>
+        <h1>From Excel pivot tables to a <em>sell-out</em> dashboard.</h1>
+        <p class="lead">A web dashboard that replaced the pivot-table spreadsheets sales leadership used to track units sold, sales value and inventory for a retail chain client, store by store and product by product. Controlled imports, automatic cleanup on the way in, and metrics that respond to any filter.</p>
+        <div class="acoes">
+          <a class="btn primario" href="../painel/">Explore the dashboard →</a>
+          <a class="btn" href="#c00">Read the case study</a>
+        </div>
+        <div class="numeros">
+          <div><strong>3</strong><span>input datasets (sales and two mappings)</span></div>
+          <div><strong>7</strong><span>tabs, from sales to access management</span></div>
+          <div><strong>49</strong><span>API routes in the backend</span></div>
+          <div><strong>215</strong><span>versions deployed in 4 months</span></div>
+          <div><strong>2</strong><span>spin-off dashboards: Atlas and Bella</span></div>
+        </div>
+        <figure class="vitrine">
+          <div class="barra-janela"><i></i><i></i><i></i><span>painel/ · Sell-Out Sales (fictional data)</span></div>
+          <img src="../assets/painel-vendas.jpg" alt="Sell-Out Sales tab: filters by year, month, period, store, category, family and product; cards for total sold, stores with sales and top branch; chart of units by month" width="1440" height="900">
+        </figure>
+      </div>
+    </section>
+
+    <div class="wrap livro">
+      <aside class="indice" aria-label="Chapters">
+        <p>Chapters</p>
+        <ol>
+          <li><a href="#c00"><b>00</b>The challenge</a></li>
+          <li><a href="#c01"><b>01</b>Principles</a></li>
+          <li><a href="#c02"><b>02</b>The datasets</a></li>
+          <li><a href="#c03"><b>03</b>Data flow</a></li>
+          <li><a href="#c04"><b>04</b>MongoDB model</a></li>
+          <li><a href="#c05"><b>05</b>Backend and imports</a></li>
+          <li><a href="#c06"><b>06</b>Performance</a></li>
+          <li><a href="#c07"><b>07</b>Front end</a></li>
+          <li><a href="#c08"><b>08</b>Timeline</a></li>
+          <li><a href="#c09"><b>09</b>Production and demo</a></li>
+        </ol>
+      </aside>
+
+      <div class="capitulos">
+        <!-- 00 -->
+        <section class="capitulo" id="c00">
+          <span class="rotulo-cap">00 · The challenge</span>
+          <h2>Every month, the same spreadsheet, rebuilt from scratch.</h2>
+          <p>The retail chain sends an export from its system with sales and inventory for every store and product. To answer sales leadership's questions, the analysis was built in <strong>Excel pivot tables</strong>: heavy files, one version per person, and the same manual work at every month-end close.</p>
+          <p class="destaque revelar">How much did we sell, in which store, in which category, and is inventory keeping up with sales? All of it without opening a spreadsheet.</p>
+          <div class="grade g3 revelar">
+            <div class="cartao azul"><span class="num">SALES</span><h4>Units and value</h4><p>Units sold and sales value by month, day, store, category, family and product.</p></div>
+            <div class="cartao verde"><span class="num">INVENTORY</span><h4>Position and trend</h4><p>Inventory on the last day of each month, highest and lowest stock levels, and daily history by store.</p></div>
+            <div class="cartao ambar"><span class="num">ROUTINE</span><h4>No rework</h4><p>Import the month's file and you're done: the dashboard cleans, classifies and updates on its own.</p></div>
+          </div>
+        </section>
+
+        <!-- 01 -->
+        <section class="capitulo" id="c01">
+          <span class="rotulo-cap">01 · Principles</span>
+          <h2>The front end displays. The backend processes. Mongo stores.</h2>
+          <p>The architecture fits in one sentence, and four rules guided every decision:</p>
+          <div class="grade g2 revelar">
+            <div class="cartao"><span class="num">01</span><h4>The import is the most important part</h4><p>All data comes in ready to query: numbers converted, dates standardized, category and family already stored. The dashboard never has to work anything out at display time.</p></div>
+            <div class="cartao"><span class="num">02</span><h4>Every import can be undone</h4><p>Each row carries its batch ID. Undoing deletes exactly that batch, records it in the history and clears the cache.</p></div>
+            <div class="cartao"><span class="num">03</span><h4>No stale numbers on screen</h4><p>Importing, undoing or clearing invalidates the cache. Correct data in Mongo behind an outdated dashboard is as serious an error as wrong data.</p></div>
+            <div class="cartao"><span class="num">04</span><h4>Role-based access</h4><p>The primary user cannot be deleted or have their password changed through the dashboard. Admins manage users, and critical cleanups require the primary password.</p></div>
+          </div>
+        </section>
+
+        <!-- 02 -->
+        <section class="capitulo" id="c02">
+          <span class="rotulo-cap">02 · The datasets</span>
+          <h2>Three files, three behaviors.</h2>
+          <p>Each dataset has a different import rule, and that difference has to be explicit to whoever imports it. The import screen explains each one and offers a template to download.</p>
+          <div class="tabela-rolagem revelar">
+            <table class="tabela">
+              <thead><tr><th>Dataset</th><th>Format</th><th>Columns</th><th>On import</th><th>Pitfall found</th></tr></thead>
+              <tbody>
+                <tr><td>Raw data</td><td>CSV, XLS or XLSX</td><td><code>Data</code> <code>Loja</code> <code>GTIN/PLU</code> <code>Produto</code> <code>Venda (Qtd)</code> <code>Venda (R$)</code> <code>Estoque Diario</code></td><td><span class="ok">Appends</span> to the history (or replaces the period)</td><td>Currency values in mixed formats, month names spelled out, and GTINs losing their leading zeros in XLSX</td></tr>
+                <tr><td>Category mapping</td><td>XLSX</td><td><code>CODBARRAS</code> <code>CATEGORIA</code> <code>FAMILIA</code> <code>NOME PRODUTO</code></td><td><span class="alerta">Replaces</span> the entire mapping</td><td>Products sold without a mapping had to show up as pending, not disappear</td></tr>
+                <tr><td>Store mapping</td><td>CSV</td><td><code>Cod_Loja</code> <code>Nome_Fantasia</code></td><td><span class="alerta">Replaces</span> the entire mapping</td><td>Importing a partial file wiped out the other stores: the screen now shows a prominent warning</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 03 -->
+        <section class="capitulo" id="c03">
+          <span class="rotulo-cap">03 · Data flow</span>
+          <h2>From file to tab, with no calculation at display time.</h2>
+          <div class="fluxo revelar" role="img" aria-label="Flow: file, batch import, field preparation, MongoDB, cached aggregations and dashboard tabs">
+            <div class="coluna"><b>1 · File</b>
+              <div class="item erp">Raw data<small>CSV · XLS · XLSX</small></div>
+              <div class="item bi">Category mapping<small>XLSX</small></div>
+              <div class="item bi">Store mapping<small>CSV</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>2 · Import</b>
+              <div class="item">Batch upload<small>progress bar</small></div>
+              <div class="item">Normalization<small>numbers, dates, GTIN</small></div>
+              <div class="item">Classification<small>category and family from the mapping</small></div>
+              <div class="item">Batch log<small>who, when, how many rows</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>3 · MongoDB</b>
+              <div class="item fato">dados_brutos<small>with prepared fields</small></div>
+              <div class="item dim">mappings<small>categories and stores</small></div>
+              <div class="item">indexes<small>date, GTIN, store, category</small></div>
+            </div>
+            <div class="seta">→</div>
+            <div class="coluna"><b>4 · Dashboard</b>
+              <div class="item">Aggregations<small>on the database server</small></div>
+              <div class="item">In-memory cache<small>prewarmed</small></div>
+              <div class="item">5 analytics tabs<small>+ import and management</small></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04 -->
+        <section class="capitulo" id="c04">
+          <span class="rotulo-cap">04 · MongoDB model</span>
+          <h2>One central collection, built to answer fast.</h2>
+          <p>Sales and inventory data live in one central collection, <code>dados_brutos</code>. Each row of the file becomes a document, and the import adds <strong>prepared fields</strong> (prefixed with <code>_</code>) that queries use instead of the original fields.</p>
+          <figure class="diagrama revelar">
+            <svg viewBox="0 0 960 430" role="img" aria-label="Collections: dados_brutos at the center, linked to the category and store mappings and to the import log; access collections below">
+              <path class="liga forte" d="M365 120 C 300 120, 310 69, 260 69"/><path class="liga forte" d="M365 160 C 300 160, 310 179, 260 179"/>
+              <path class="liga forte" d="M595 140 C 650 140, 650 69, 700 69"/><path class="liga" d="M815 98 V 150"/>
+              <path class="liga" d="M260 320 H 365"/><path class="liga" d="M595 320 H 700"/>
+              <g class="no dim"><rect x="30" y="40" width="230" height="58" rx="10"/><text x="145" y="64" text-anchor="middle">categorias_depara</text><text class="sub" x="145" y="84" text-anchor="middle">GTIN → category, family, name</text></g>
+              <g class="no dim"><rect x="30" y="150" width="230" height="58" rx="10"/><text x="145" y="174" text-anchor="middle">lojas_depara</text><text class="sub" x="145" y="194" text-anchor="middle">code → store name</text></g>
+              <g class="no fato"><rect x="365" y="90" width="230" height="100" rx="10"/><text x="480" y="122" text-anchor="middle">dados_brutos</text><text class="sub" x="480" y="144" text-anchor="middle">sales and inventory by day × store × GTIN</text><text class="sub" x="480" y="164" text-anchor="middle">+ _qtd_num _valor_num _data_iso</text><text class="sub" x="480" y="180" text-anchor="middle">_gtin _cat _fam _import_id</text></g>
+              <g class="no apoio"><rect x="700" y="40" width="230" height="58" rx="10"/><text x="815" y="64" text-anchor="middle">logs_importacao</text><text class="sub" x="815" y="84" text-anchor="middle">batch, file, user, total</text></g>
+              <g class="no apoio"><rect x="700" y="150" width="230" height="58" rx="10"/><text x="815" y="174" text-anchor="middle">templates_importacao</text><text class="sub" x="815" y="194" text-anchor="middle">downloadable templates</text></g>
+              <g class="no"><rect x="30" y="291" width="230" height="58" rx="10"/><text x="145" y="315" text-anchor="middle">usuarios_admin</text><text class="sub" x="145" y="335" text-anchor="middle">includes the primary user</text></g>
+              <g class="no"><rect x="365" y="291" width="230" height="58" rx="10"/><text x="480" y="315" text-anchor="middle">usuarios_importacao</text><text class="sub" x="480" y="335" text-anchor="middle">who can import</text></g>
+              <g class="no"><rect x="700" y="291" width="230" height="58" rx="10"/><text x="815" y="315" text-anchor="middle">tokens_reset</text><text class="sub" x="815" y="335" text-anchor="middle">email reset, expires</text></g>
+            </svg>
+            <figcaption>Red: sales and inventory data. Green: mappings. Dashed: import control. Below: access.</figcaption>
+          </figure>
+          <div class="tabela-rolagem revelar">
+            <table class="tabela">
+              <thead><tr><th>Prepared field</th><th>What it stores</th><th>Why it exists</th></tr></thead>
+              <tbody>
+                <tr><td><code>_qtd_num</code> · <code>_valor_num</code></td><td>Units and value converted to numbers</td><td>Sum without parsing text on every query</td></tr>
+                <tr><td><code>_data_iso</code></td><td>Date in YYYY-MM-DD format</td><td>Filter by period using an index</td></tr>
+                <tr><td><code>_gtin</code></td><td>Standardized product code</td><td>Match against the mapping without leading-zero mismatches</td></tr>
+                <tr><td><code>_cat</code> · <code>_fam</code></td><td>Category and family stored on import</td><td>Avoid a mapping lookup on every click</td></tr>
+                <tr><td><code>_import_id</code></td><td>The row's source batch</td><td>Undo exactly one import</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 05 -->
+        <section class="capitulo" id="c05">
+          <span class="rotulo-cap">05 · Backend and imports</span>
+          <h2>Five steps between the file and an updated dashboard.</h2>
+          <p>The backend is Node.js with Express: 49 routes for the dashboard, imports, user management and history. Raw data imports always follow the same sequence:</p>
+          <div class="etapas revelar">
+            <div class="etapa"><div><h4>The browser reads the file and sends it in batches</h4><p>large files don't hit the request timeout</p></div></div>
+            <div class="etapa"><div><h4>The server reads and normalizes each row</h4><p>values, spelled-out month names, dates and GTINs</p></div></div>
+            <div class="etapa"><div><h4>It classifies using the in-memory mapping</h4><p>the GTIN → category and family map is loaded once per import</p></div></div>
+            <div class="etapa"><div><h4>It writes to Mongo with the prepared fields</h4><p>each row tagged with its batch</p></div></div>
+            <div class="etapa"><div><h4>It logs the batch and clears the cache</h4><p>and prewarms the main queries before the first click</p></div></div>
+          </div>
+          <div class="grade g2 revelar">
+            <div class="cartao"><h4>Append or replace</h4><p>By default, an import appends to the history. In replace mode, the months in the file overwrite the data for the same period, so a corrected month can be re-sent.</p></div>
+            <div class="cartao"><h4>Safe undo</h4><p>Undo deletes the batch's rows (or the entire mapping), removes the log and clears the cache. Clearing the entire history requires the primary user's password.</p></div>
+          </div>
+        </section>
+
+        <!-- 06 -->
+        <section class="capitulo" id="c06">
+          <span class="rotulo-cap">06 · Performance</span>
+          <h2>The secret is in the input, not the screen.</h2>
+          <p>As the history grew every month, the dashboard started to slow down and some broad queries hit the server's time limit. Each bottleneck became an architecture change:</p>
+          <div class="revelar">
+            <div class="mudanca"><div class="antes"><b>Before</b>Category and family looked up in the mapping on every query.</div><div class="seta">→</div><div class="depois"><b>After</b>Stored on import (<code>_cat</code>, <code>_fam</code>). The query only groups.</div></div>
+            <div class="mudanca"><div class="antes"><b>Before</b>Changing the mapping meant reprocessing everything on the application server.</div><div class="seta">→</div><div class="depois"><b>After</b>Reclassification with <code>$lookup</code> + <code>$merge</code> inside MongoDB itself, with a progress bar.</div></div>
+            <div class="mudanca"><div class="antes"><b>Before</b>Each tab recalculated on open, and the first visit was slow.</div><div class="seta">→</div><div class="depois"><b>After</b>In-memory cache on the dashboard routes and prewarming of the main queries after every import.</div></div>
+            <div class="mudanca"><div class="antes"><b>Before</b>Querying the full history timed out (504 error).</div><div class="seta">→</div><div class="depois"><b>After</b>Heavy tabs open on the current year and load on demand, and the broad aggregation was rewritten to stay under the limit.</div></div>
+            <div class="mudanca"><div class="antes"><b>Before</b>Database checks and migrations held up the server at startup.</div><div class="seta">→</div><div class="depois"><b>After</b>Startup doesn't wait for the database: heavy tasks were moved out of startup and the dashboard responds right after deploy.</div></div>
+          </div>
+          <p class="destaque revelar">If the dashboard has to work out category, date or value while displaying, it gets slow. The heavy lifting happens only once, on the way in.</p>
+        </section>
+
+        <!-- 07 -->
+        <section class="capitulo" id="c07">
+          <span class="rotulo-cap">07 · Front end</span>
+          <h2>Seven tabs, the same filters in all of them.</h2>
+          <p>The interface is plain HTML, CSS and JavaScript, with no framework. The filters (year, month, period, store, category, family and product, with multi-select) are standardized across tabs, and every tab exports to Excel and PDF.</p>
+          <div class="grade g3 revelar">
+            <div class="cartao azul"><h4>Sell-Out Sales</h4><p>Units by month, store, category and family, with the top branch highlighted.</p></div>
+            <div class="cartao azul"><h4>Sales Value</h4><p>The same view in Brazilian reais, by month and by store.</p></div>
+            <div class="cartao azul"><h4>Sales by Day</h4><p>Daily curve, daily average and best day of the period.</p></div>
+            <div class="cartao verde"><h4>Inventory</h4><p>Inventory on the last day of each month, highest and lowest stock levels, and daily history.</p></div>
+            <div class="cartao verde"><h4>Sell-Out × Inventory</h4><p>The month's sales next to closing inventory, by branch.</p></div>
+            <div class="cartao ambar"><h4>Import and Manage</h4><p>Imports with templates and history; management of users, admins and templates.</p></div>
+          </div>
+          <div class="galeria revelar">
+            <figure><img src="../assets/painel-valor.jpg" alt="Sales Value tab with the grand total in reais and a chart by month" loading="lazy" width="1440" height="900"><figcaption>Sales Value: period total and monthly trend.</figcaption></figure>
+            <figure><img src="../assets/painel-dia.jpg" alt="Sales by Day tab with daily average, best day and daily curve" loading="lazy" width="1440" height="900"><figcaption>Sales by Day: daily average and best day.</figcaption></figure>
+            <figure><img src="../assets/painel-se.jpg" alt="Sell-Out x Inventory tab with sales and inventory bars by month" loading="lazy" width="1440" height="900"><figcaption>Sell-Out × Inventory: sales and closing inventory side by side.</figcaption></figure>
+            <figure><img src="../assets/painel-importar.jpg" alt="Import tab with the three file types, templates and instructions" loading="lazy" width="1440" height="900"><figcaption>Import: each dataset with a template and its rule explained.</figcaption></figure>
+          </div>
+        </section>
+
+        <!-- 08 -->
+        <section class="capitulo" id="c08">
+          <span class="rotulo-cap">08 · Timeline</span>
+          <h2>215 versions in four months.</h2>
+          <p>The dashboard evolved in production, through small and frequent releases. The milestones, taken from the repository history:</p>
+          <ol class="linha-tempo revelar">
+            <li><time>Apr 29</time><b>Initial structure</b><span>Project with MongoDB and the first dashboard with mappings.</span></li>
+            <li><time>May 06</time><b>First deploy</b><span>Docker, deployment on Koyeb, import control and history, optimized routes.</span></li>
+            <li><time>May 15</time><b>Classification in the database</b><span>Filters fed directly from Mongo and mapping reclassification with <code>$lookup</code> + <code>$merge</code>, with a progress bar.</span></li>
+            <li><time>May 18–19</time><b>Inventory and security</b><span>Daily inventory history, password-protected cleanup, XLSX templates and replace mode.</span></li>
+            <li><time>May 26–29</time><b>Consistency</b><span>Cache invalidated on undo, filters standardized across tabs, and multi-select.</span></li>
+            <li><time>Jul 16</time><b>Product filter</b><span>A new level of detail in every tab.</span></li>
+            <li><time>Jul 22–31</time><b>Scale</b><span>Batch import of XLS and XLSX, non-blocking startup, no more timeout on the broad aggregation, and GTINs preserved.</span></li>
+            <li><time>Aug 21</time><b>Public demo</b><span>Static version with a mock API in the browser, for the portfolio.</span></li>
+          </ol>
+          <p>The same technical foundation gave rise to two other dashboards, each with its client's specifics: the <a href="https://lariantunez.github.io/painel-sellout-de-para/">Atlas Dashboard</a> (intermediate GTIN mapping) and the <a href="https://lariantunez.github.io/painel-contagem-estoque/">Bella Dashboard</a> (manual inventory counts).</p>
+        </section>
+
+        <!-- 09 -->
+        <section class="capitulo" id="c09">
+          <span class="rotulo-cap">09 · Production and demo</span>
+          <h2>In production on Koyeb; here, in the browser.</h2>
+          <div class="arquitetura revelar">
+            <div class="caixa"><span class="tag">Browser</span><b>Front end</b><ul><li>plain HTML, CSS and JS</li><li>exports to Excel and PDF</li></ul></div>
+            <div class="seta">⇄</div>
+            <div class="caixa"><span class="tag">Koyeb · Docker</span><b>Node.js + Express</b><ul><li>49 routes, in-memory cache</li><li>login, roles and email reset</li><li>read-only mode</li></ul></div>
+            <div class="seta">⇄</div>
+            <div class="caixa"><span class="tag">MongoDB Atlas</span><b>Data</b><ul><li>prepared raw data</li><li>mappings, logs and users</li></ul></div>
+          </div>
+          <p>This demo has no server or database. A module (<code>mock-api.js</code>) intercepts the dashboard's calls in the browser and responds with fictional data: made-up stores, products and numbers. The <strong>front end is the same as in production</strong>: filters, tabs, charts and exports really work. The import and management area opens in demo mode.</p>
+          <h3>Technologies</h3>
+          <div class="pilulas">
+            <span>Node.js</span><span>Express</span><span>MongoDB Atlas</span><span>Aggregations ($lookup, $merge)</span><span>Framework-free JavaScript</span><span>Multer</span><span>XLSX · csv-parser</span><span>Nodemailer</span><span>Docker</span><span>Koyeb</span>
+          </div>
+          <div class="encerramento revelar">
+            <span class="rotulo-cap">Try it</span>
+            <h2>Pick a store and compare sales with inventory.</h2>
+            <p class="texto">A suggested path: in "Vendas Sell Out" (Sell-Out Sales), filter by one store and one category and watch the numbers and the chart change. Then open "Sell Out × Estoque" (Sell-Out × Inventory) and apply the same store: the month's sales appear next to closing inventory. Each tab has its own filters, so you can compare different slices side by side.</p>
+            <div class="acoes"><a class="btn primario" href="../painel/">Open the dashboard →</a><a class="btn" href="https://github.com/lariantunez/painel-sellout-varejo">View the code</a></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span><strong>Larissa Antunez</strong> · Analytics &amp; Development</span>
+      <span>Project in production · demo with fictional data</span>
+    </div>
+  </footer>
+  <script src="../assets/estudo.js"></script>
+</body>
+</html>
