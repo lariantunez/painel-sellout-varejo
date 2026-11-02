@@ -4,6 +4,8 @@
 
 ![Painel Vitta com dados fictícios](assets/painel-vendas.jpg)
 
+> **Versão de portfólio.** O painel original roda em produção, com dados reais do cliente. Esta versão usa o mesmo código, com dados e nomes fictícios.
+
 Dashboard web desenvolvido para substituir análises manuais em planilhas dinâmicas de Excel por uma visão centralizada de vendas, estoque e performance comercial do cliente Vitta.
 
 O painel consolida arquivos operacionais, aplica regras de tratamento e disponibiliza indicadores para leitura executiva, filtros dinâmicos e acompanhamento por período, filial, categoria, família e produto.
@@ -18,7 +20,7 @@ Automatizar uma rotina que antes dependia de planilhas dinâmicas, reduzindo ret
 - Importação de tabelas De/Para de lojas e categorias.
 - Dashboard com KPIs de vendas, valor vendido, estoque e evolução diária.
 - Filtros por período, filial, categoria, família e produto.
-- Agregacoes otimizadas no MongoDB para consultas mais rapidas.
+- Agregações otimizadas no MongoDB para consultas mais rápidas.
 - Cache controlado no backend para reduzir processamento repetido.
 - Área administrativa para usuários, admins, templates e logs de importação.
 - Redefinição de senha por e-mail.
@@ -81,3 +83,7 @@ Este repositório foi preparado para portfólio. Bases reais, arquivos `.env`, u
 ## Status
 
 Projeto funcional e publicado originalmente em ambiente de produção, com rotinas de importação, tratamento, consulta e administração.
+
+---
+
+**🇺🇸 English:** a sell-out and inventory dashboard that replaced manual Excel pivot tables. Raw sales files (CSV/XLSX) are imported with validation and store/category mapping, MongoDB aggregations use pre-computed fields and a controlled cache, and the dashboard offers KPIs and filters by period, store, category, family and product. It also has user management, import logs and password reset by e-mail. Stack: Node.js, Express, MongoDB Atlas, plain JavaScript, Docker. Portfolio version with fictional data; the original runs in production.
